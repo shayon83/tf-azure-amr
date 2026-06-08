@@ -1,0 +1,88 @@
+name: Publish to TFC Private Registry
+
+on:
+  release:
+    types: [published]
+  # Allow manual trigger to backfill a release that existed before this workflow was added.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Module version to publish (e.g. 0.1.0)"
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  TFC_ORG: SayanOrg
+  MODULE_NAME: managed-redis
+  MODULE_PROVIDER: azurerm
+  TFC_API: https://app.terraform.io/api/v2
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            # Tags from release-please terraform-module type have no 'v' prefix.
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package module
+        run: |
+          tar -czf module.tar.gz \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='*.tar.gz' \
+            .
+
+      - name: Ensure module exists in TFC registry
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+        run: |
+          STATUS=$(curl -so /dev/null -w "%{http_code}" \
+            --header "Authorization: Bearer $TFE_TOKEN" \
+            "$TFC_API/organizations/$TFC_ORG/registry-modules/private/$TFC_ORG/$MODULE_NAME/$MODULE_PROVIDER")
+
+          if [ "$STATUS" = "404" ]; then
+            echo "Module not found — creating $MODULE_NAME/$MODULE_PROVIDER in $TFC_ORG registry"
+            curl -sf \
+              --header "Authorization: Bearer $TFE_TOKEN" \
+              --header "Content-Type: application/vnd.api+json" \
+              --request POST \
+              --data "{\"data\":{\"type\":\"registry-modules\",\"attributes\":{\"name\":\"$MODULE_NAME\",\"provider\":\"$MODULE_PROVIDER\",\"registry-name\":\"private\"}}}" \
+              "$TFC_API/organizations/$TFC_ORG/registry-modules"
+          else
+            echo "Module already exists in registry"
+          fi
+
+      - name: Create version and upload archive
+        env:
+          TFE_TOKEN: ${{ secrets.TFE_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "Publishing $MODULE_NAME/$MODULE_PROVIDER v$VERSION to $TFC_ORG"
+
+          UPLOAD_URL=$(curl -sf \
+            --header "Authorization: Bearer $TFE_TOKEN" \
+            --header "Content-Type: application/vnd.api+json" \
+            --request POST \
+            --data "{\"data\":{\"type\":\"registry-module-versions\",\"attributes\":{\"version\":\"$VERSION\"}}}" \
+            "$TFC_API/organizations/$TFC_ORG/registry-modules/private/$TFC_ORG/$MODULE_NAME/$MODULE_PROVIDER/versions" \
+            | jq -r '.data.links.upload')
+
+          curl -sf \
+            --header "Content-Type: application/octet-stream" \
+            --request PUT \
+            --data-binary @module.tar.gz \
+            "$UPLOAD_URL"
+
+          echo "Done — $MODULE_NAME/$MODULE_PROVIDER v$VERSION is available at:"
+          echo "https://app.terraform.io/app/$TFC_ORG/registry/modules/private/$TFC_ORG/$MODULE_NAME/$MODULE_PROVIDER/$VERSION"
