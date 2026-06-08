@@ -1,0 +1,19 @@
+# Local Terraform working directories — not needed in VCS, TFC downloads providers itself
+.terraform/
+
+# Terraform state is managed by Terraform Cloud — never commit state files
+*.tfstate
+*.tfstate.backup
+
+# Crash logs
+crash.log
+
+# Sensitive variable files — set subscription_id and secrets in TFC workspace variables instead
+terraform.tfvars
+*.auto.tfvars
+
+# Override files are a local escape hatch — not suitable for shared repos
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
