@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/shayon83/tf-azure-amr/compare/v0.2.0...v0.2.1) (2026-06-09)
+
+
+### Bug Fixes
+
+* index default_database as list in outputs ([b5f85b6](https://github.com/shayon83/tf-azure-amr/commit/b5f85b6ee61da9df048c5325bc605e40fd6a363a))
+
 ## [0.2.0](https://github.com/shayon83/tf-azure-amr/compare/0.1.0...v0.2.0) (2026-06-08)
 
 
