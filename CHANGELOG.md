@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/shayon83/tf-azure-amr/compare/v0.2.1...v0.3.0) (2026-06-10)
+
+
+### Features
+
+* add private endpoint support ([011fb6d](https://github.com/shayon83/tf-azure-amr/commit/011fb6dbf8f95f932e813332839ea4514526b611))
+
 ## [0.2.1](https://github.com/shayon83/tf-azure-amr/compare/v0.2.0...v0.2.1) (2026-06-09)
 
 
