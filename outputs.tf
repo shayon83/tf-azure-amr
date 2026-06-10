@@ -24,3 +24,13 @@ output "secondary_access_key" {
   value       = azurerm_managed_redis.this.default_database[0].secondary_access_key
   sensitive   = true
 }
+
+output "private_endpoint_id" {
+  description = "Resource ID of the private endpoint (null when private_endpoint variable is not set)."
+  value       = local.private_endpoint_enabled ? azurerm_private_endpoint.this[0].id : null
+}
+
+output "private_ip_address" {
+  description = "Private IP address assigned to the Redis endpoint NIC (null when private_endpoint variable is not set)."
+  value       = local.private_endpoint_enabled ? azurerm_private_endpoint.this[0].private_service_connection[0].private_ip_address : null
+}

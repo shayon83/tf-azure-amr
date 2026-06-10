@@ -73,6 +73,15 @@ variable "access_keys_authentication_enabled" {
   default     = true
 }
 
+variable "private_endpoint" {
+  description = "Private endpoint configuration. When set, public_network_access is forced to Disabled. The dns_zone_id must reference a privatelink.redis.azure.net zone that is already linked to the VNet."
+  type = object({
+    subnet_id   = string
+    dns_zone_id = string
+  })
+  default = null
+}
+
 variable "tags" {
   description = "Tags to apply to the Redis instance."
   type        = map(string)
